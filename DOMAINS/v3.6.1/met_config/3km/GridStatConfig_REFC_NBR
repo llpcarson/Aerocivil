@@ -1,0 +1,134 @@
+////////////////////////////////////////////////////////////////////////////////
+//
+// Grid-Stat configuration file.
+//
+// For additional information, see the MET_BASE/data/config/README file.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+//
+// Output model name to be written
+//
+model = "${MODEL}_${RES}_${VERSION}";
+
+////////////////////////////////////////////////////////////////////////////////
+
+//
+// Verification grid
+//
+regrid = {
+   to_grid    = ${RGD};
+   vld_thresh = 0.5;
+   method     = NEAREST;
+   width      = 1;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+//
+// Forecast and observation fields to be verified
+//
+fcst = {
+   wind_thresh = [ NA ];
+
+   field = [
+      {
+        name       = "REFC";
+        level      = [ "L0" ];
+        GRIB1_ptv  = 129;
+        cat_thresh = [ >=20.0, >=25.0, >=30.0, >=35.0, >=40.0 ];
+      }
+   ];
+
+};
+obs = fcst;
+
+////////////////////////////////////////////////////////////////////////////////
+
+//
+// Verification masking regions
+//
+mask = {
+   grid = [ "FULL" ];
+   poly = [];
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+//
+// Confidence interval settings
+//
+ci_alpha  = [ 0.01 ];
+
+boot = {
+   interval = PCTILE;
+   rep_prop = 1.0;
+   n_rep    = 0;
+   rng      = "mt19937";
+   seed     = "";
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+//
+// Interpolation methods
+//
+interp = {
+   field      = BOTH;
+   vld_thresh = 1.0;
+
+   type = [
+      {
+         method = NEAREST;
+         width  = 1;
+      }
+   ];
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+//
+// Neighborhood methods
+//
+nbrhd = {
+   vld_thresh = 0.5;  
+   width      = [ 3, 9, 15, 21, 27, 33, 39, 45 ];
+   cov_thresh = [ >=0.5 ];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//
+// Statistical output types
+//
+output_flag = {
+   fho    = NONE;
+   ctc    = NONE;
+   cts    = NONE;
+   mctc   = NONE;
+   mcts   = NONE;
+   cnt    = NONE;
+   sl1l2  = NONE;
+   vl1l2  = NONE;
+   pct    = NONE;
+   pstd   = NONE;
+   pjc    = NONE;
+   prc    = NONE;
+   nbrctc = NONE;
+   nbrcts = NONE;
+   nbrcnt = STAT;
+};
+
+//
+// NetCDF matched pairs output file
+//
+nc_pairs_flag = TRUE;
+
+////////////////////////////////////////////////////////////////////////////////
+
+rank_corr_flag = FALSE;
+tmp_dir        = "/tmp";
+output_prefix  = "${MODEL}_F${FCST_TIME}_${RES}_REFC_NBR";
+version        = "V5.1";
+
+////////////////////////////////////////////////////////////////////////////////

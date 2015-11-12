@@ -1,0 +1,3 @@
+#!/bin/ksh --login
+
+/glade/p/ral/jnt/tools/rocoto/bin/rocotorun -w /glade/p/ral/jnt/Aerocivil/EXAMPLE_CASE/xml/example_case_v3.6.1.xml -d /glade/p/ral/jnt/Aerocivil/EXAMPLE_CASE/OUTPUT/example_case_v3.6.1/store/example_case.store -v 10

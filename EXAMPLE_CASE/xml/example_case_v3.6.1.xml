@@ -1,0 +1,1152 @@
+<?xml version="1.0"?>
+<!DOCTYPE workflow
+[
+  <!ENTITY PROJ_HOME                          "/glade/p/ral/jnt/Aerocivil">
+  <!ENTITY PROJ_DATA                          "&PROJ_HOME;/EXAMPLE_CASE/OUTPUT/example_case_v3.6.1">
+  <!ENTITY SCRIPTS                            "&PROJ_HOME;/EXAMPLE_CASE/bin">
+  <!ENTITY CONSTANT                           "&SCRIPTS;/WRF_constants.ksh">
+  <!ENTITY LOG                                "&PROJ_DATA;/log/">
+
+  <!ENTITY WPS_ROOT                           "&PROJ_HOME;/CODE/WPS/v3.6.1/WPS_ARW">
+  <!ENTITY WRF_ROOT                           "&PROJ_HOME;/CODE/WRF/v3.6.1/WRFV3">
+  <!ENTITY UPP_EXEC                           "&PROJ_HOME;/CODE/UPP/v3.0/UPPV3.0/bin">  
+  <!ENTITY MET_HOME                           "&PROJ_HOME;/CODE/MET/v5.1_beta/met-5.1beta1">
+  <!ENTITY MET_EXEC                           "&MET_HOME;/bin">
+  <!ENTITY MET_CONFIG                         "&PROJ_HOME;/DOMAINS/v3.6.1/met_config">
+  
+  <!ENTITY EXT_DATAROOT                       "&PROJ_DATA;/EXT_DATA">
+  <!ENTITY MOAD_DATAHOME                      "&PROJ_HOME;/DOMAINS/v3.6.1">
+  <!ENTITY MOAD_DATAROOT                      "&PROJ_DATA;/DOMAINS">
+  
+  <!ENTITY NCARG_ROOT "/apps/ncl">
+
+  <!ENTITY GFS_DIR                            "&PROJ_HOME;/INPUT_DATA/GFS">
+
+  <!ENTITY PNT_OBS_DIR                        "&PROJ_HOME;/OBS/NATIVE/gdas">
+  <!ENTITY OBS_DIR                            "&PROJ_HOME;/OBS">
+<!--  <!ENTITY ST2_03H_OBS_DIR                    "&PROJ_HOME;/OBS/ST2_03h">
+  <!ENTITY ST2_24H_OBS_DIR                    "&PROJ_HOME;/OBS/ST2_24h">
+  <!ENTITY ST2_03H_NTV_OBS_DIR                "&PROJ_HOME;/OBS/NATIVE/st2_native_03h/">
+  <!ENTITY ST2_24H_NTV_OBS_DIR                "&PROJ_HOME;/OBS/NATIVE/st2_native_24h/">-->
+
+  <!ENTITY FCST_LENGTH "48">
+  
+
+  <!ENTITY PROJECT "P48503002"> <!--annual-->
+  <!-- <!ENTITY PROJECT "P48500053"> monthly-->
+  <!ENTITY SCHED "lsf">
+  <!ENTITY QE "regular"> 
+  <!ENTITY CA "caldera"> 
+  <!ENTITY GE "geyser"> 
+  <!ENTITY METGRID_PROC "32">
+  <!ENTITY REAL_PROC "64">
+  <!ENTITY WRF_PROC "512">
+  <!ENTITY POST_PROC "32">
+]>
+
+<workflow realtime="F" scheduler="&SCHED;">
+
+  <cycledef group="00Z">201509180000 201509180000 00:03:00:00</cycledef>
+
+  <log verbosity="10"><cyclestr>&LOG;/workflow/workflow_@Y@m@d@H.log</cyclestr></log>
+  
+  <metatask>
+  
+    <var name="model">WRF</var>
+    
+    <task name="ungrib_GFS" maxtries="1" cycledefs="00Z">
+  
+      <command>&SCRIPTS;/ungrib.ksh</command>
+      
+      <account>&PROJECT;</account>
+      <queue>&CA;</queue>
+      <cores>1</cores>
+      <walltime>00:10:00</walltime>
+      <jobname><cyclestr>ungrib_GFS_#model#_@Y@m@d@H</cyclestr></jobname>
+      <join><cyclestr>&LOG;/ungrib/ungrib_GFS_@Y@m@d@H.log</cyclestr></join>
+      
+      <envar>
+        <name>CONSTANT</name>
+        <value>&CONSTANT;</value>
+      </envar>
+      <envar>
+        <name>WRF_CORE</name>
+        <value>ARW</value>
+      </envar>
+      <envar>
+	<name>START_TIME</name>
+	<value><cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+	<name>SOURCE</name>
+	<value>GFS</value>
+      </envar>
+      <envar>
+	<name>SOURCE_PATH</name>
+	<value>&GFS_DIR;/<cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+	<name>FORMAT</name>
+	<value>gfs.t00z.pgrb2.0p25.f0%f</value>
+      </envar>
+      <envar>
+	<name>FCST_LENGTH</name>
+	<value>&FCST_LENGTH;</value>
+      </envar>
+      <envar>
+	<name>FCST_INTERVAL</name>
+	<value>3</value>
+      </envar>
+      <envar>
+	<name>WPS_ROOT</name>
+	<value>&WPS_ROOT;</value>
+      </envar>
+      <envar>
+	<name>MOAD_DATAHOME</name>
+	<value>&MOAD_DATAHOME;/static</value>
+      </envar>
+      <envar>
+	<name>EXT_DATAROOT</name>
+	<value>&EXT_DATAROOT;/<cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
+      
+      <dependency>
+	<and>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f000</cyclestr></datadep>
+ 	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f003</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f006</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f009</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f012</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f015</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f018</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f021</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f024</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f027</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f030</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f033</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f036</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f039</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f042</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f045</cyclestr></datadep>
+	  <datadep age="120"><cyclestr>&GFS_DIR;/@Y@m@d@H/gfs.t@Hz.pgrb2.0p25.f048</cyclestr></datadep>
+	</and>
+      </dependency>
+
+    </task> <!--task name="ungrib_GFS"-->
+  
+    <task name="metgrid" maxtries="1" cycledefs="00Z">
+      
+      <command>&SCRIPTS;/metgrid.ksh</command>
+      
+      <account>&PROJECT;</account>
+      <queue>&QE;</queue>
+      <cores>&METGRID_PROC;</cores>
+      <walltime>00:20:00</walltime>
+      <jobname><cyclestr>metgrid_#model#_@Y@m@d@H</cyclestr></jobname>
+      <join><cyclestr>&LOG;/metgrid/metgrid_@Y@m@d@H.log</cyclestr></join>  
+
+      <envar>
+        <name>CONSTANT</name>
+        <value>&CONSTANT;</value>
+      </envar>
+      <envar>
+	<name>MODEL</name>
+	<value>ARW</value>
+      </envar>
+      <envar>
+        <name>WRF_CORE</name>
+        <value>ARW</value>
+      </envar>
+      <envar>
+	<name>START_TIME</name>
+	<value><cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+	<name>FCST_LENGTH</name>
+	<value>&FCST_LENGTH;</value>
+      </envar>
+      <envar>
+	<name>FCST_INTERVAL</name>
+	<value>3</value>
+      </envar>
+      <envar>
+	<name>MAX_DOM</name>
+	<value>3</value>
+      </envar>
+      <envar>
+	<name>WPS_ROOT</name>
+	<value>&WPS_ROOT;</value>
+      </envar>
+      <envar>
+	<name>MOAD_DATAHOME</name>
+	<value>&MOAD_DATAHOME;/static</value>
+      </envar>
+      <envar>
+	<name>MOAD_DATAROOT</name>
+	<value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+	<name>SOURCE</name>
+	<value>GFS</value>
+      </envar>
+      <envar>
+	<name>SOURCE_PATH</name>
+	<value><cyclestr>&EXT_DATAROOT;/@Y@m@d@H/extprd</cyclestr></value>
+      </envar>
+      <envar>
+	<name>METGRID_PROC</name>
+	<value>&METGRID_PROC;</value>
+      </envar>
+
+      <dependency>
+	  <taskdep task="ungrib_GFS" state="SUCCEEDED"/>
+      </dependency>
+      
+    </task> <!--task name="metgrid"-->
+
+    <task name="real_#model#" maxtries="1" cycledefs="00Z">
+
+      <command>&SCRIPTS;/real_wps.ksh</command>
+      
+      <account>&PROJECT;</account>
+      <queue>&QE;</queue>
+      <cores>&REAL_PROC;</cores>
+      <walltime>00:30:00</walltime>
+      <jobname><cyclestr>real_#model#_@Y@m@d@H</cyclestr></jobname>
+      <join><cyclestr>&LOG;/real/real_@Y@m@d@H.log</cyclestr></join>  
+
+      <envar>
+        <name>CONSTANT</name>
+        <value>&CONSTANT;</value>
+      </envar>
+      <envar>
+        <name>START_TIME</name>
+        <value><cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>FCST_LENGTH</name>
+        <value>&FCST_LENGTH;</value>
+      </envar>
+      <envar>
+        <name>FCST_INTERVAL</name>
+        <value>3</value>
+      </envar>
+      <envar>
+        <name>MAX_DOM</name>
+        <value>3</value>
+      </envar>
+      <envar>
+        <name>WRF_CORE</name>
+        <value>ARW</value>
+      </envar>
+      <envar>
+	<name>SOURCE</name>
+	<value>GFS</value>
+      </envar>
+      <envar>
+        <name>WRF_ROOT</name>
+        <value>&WRF_ROOT;</value>
+      </envar>
+      <envar>
+        <name>MOAD_DATAHOME</name>
+        <value>&MOAD_DATAHOME;/static</value>
+      </envar>
+      <envar>
+        <name>INPUT_DATAROOT</name>
+        <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>MOAD_DATAROOT</name>
+        <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>REAL_PROC</name>
+        <value>&REAL_PROC;</value>
+      </envar>
+
+      <dependency>
+        <taskdep task="metgrid" state="SUCCEEDED"/>
+      </dependency>
+
+    </task> <!--task name="real"-->
+
+    <task name="wrf_#model#" maxtries="1" cycledefs="00Z">
+    
+      <command>&SCRIPTS;/wrf_wps.ksh</command>
+        
+      <account>&PROJECT;</account>
+      <queue>&QE;</queue>
+      <cores>&WRF_PROC;</cores>
+      <walltime>03:00:00</walltime>
+      <jobname><cyclestr>wrf_#model#_@Y@m@d@H</cyclestr></jobname>
+      <join><cyclestr>&LOG;/wrf/wrf_@Y@m@d@H.log</cyclestr></join> 
+
+      <envar>
+        <name>CONSTANT</name>
+        <value>&CONSTANT;</value>
+      </envar>
+      <envar>
+        <name>START_TIME</name>
+        <value><cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>FCST_LENGTH</name>
+        <value>&FCST_LENGTH;</value>
+      </envar>
+      <envar>
+        <name>FCST_INTERVAL</name>
+        <value>3</value>
+      </envar>
+      <envar>
+        <name>MAX_DOM</name>
+        <value>3</value>
+      </envar>
+      <envar>
+        <name>WRF_ROOT</name>
+        <value>&WRF_ROOT;</value>
+      </envar>
+      <envar>
+        <name>MOAD_DATAHOME</name>
+        <value>&MOAD_DATAHOME;/static</value>
+      </envar>
+      <envar>
+        <name>MOAD_DATAROOT</name>
+        <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>INPUT_DATAROOT</name>
+        <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>WRFPROC</name>
+        <value>&WRF_PROC;</value>
+      </envar>
+
+      <dependency>
+        <taskdep task="real_#model#" state="SUCCEEDED"/>
+      </dependency>
+
+    </task> <!--task name="wrf"-->
+ 
+    <metatask>
+
+      <var name="fcst">00 03 06 09 12 15 18 21 24 27 30 33 36 39 42 45 48</var>
+
+      <task name="post_#model#_#fcst#" maxtries="1" cycledefs="00Z">
+
+        <command>&SCRIPTS;/post_interp.ksh</command>
+      
+        <account>&PROJECT;</account>
+	<queue>&QE;</queue>
+	<cores>&POST_PROC;</cores>
+	<walltime>00:35:00</walltime>
+	<jobname><cyclestr>post_#model#_@Y@m@d@H_#fcst#</cyclestr></jobname>
+	<join><cyclestr>&LOG;/post/post_@Y@m@d@H_#fcst#.log</cyclestr></join> 
+
+        <envar>
+          <name>SCRIPTS</name>
+          <value>&SCRIPTS;</value>
+        </envar>
+        <envar>
+          <name>CONSTANT</name>
+          <value>&CONSTANT;</value>
+        </envar>
+        <envar>
+          <name>START_TIME</name>
+          <value><cyclestr>@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>FCST_TIME</name>
+          <value>#fcst#</value>
+        </envar>
+        <envar>
+          <name>DOMAIN_LIST</name>
+          <value>d01 d02 d03</value>
+        </envar>
+        <envar>
+          <name>WRF_ROOT</name>
+          <value>&WRF_ROOT;</value>
+        </envar>
+        <envar>
+          <name>EXE_ROOT</name>
+          <value>&UPP_EXEC;</value>
+        </envar>
+        <envar>
+          <name>MOAD_DATAHOME</name>
+          <value>&MOAD_DATAHOME;/static</value>
+        </envar>
+        <envar>
+          <name>MOAD_DATAROOT</name>
+          <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>MODEL</name>
+          <value>ARW</value>
+	</envar>
+      <envar>
+	<name>POST_PROC</name>
+	<value>&POST_PROC;</value>
+      </envar>
+
+      <dependency>
+	<and>
+	<datadep age="60">&MOAD_DATAROOT;/<cyclestr>@Y@m@d@H</cyclestr>/wrfprd/wrfout_d01_<cyclestr offset="#fcst#:00:00">@Y-@m-@d_@H:@M:@S</cyclestr></datadep>
+	<datadep age="60">&MOAD_DATAROOT;/<cyclestr>@Y@m@d@H</cyclestr>/wrfprd/wrfout_d02_<cyclestr offset="#fcst#:00:00">@Y-@m-@d_@H:@M:@S</cyclestr></datadep>
+	<datadep age="60">&MOAD_DATAROOT;/<cyclestr>@Y@m@d@H</cyclestr>/wrfprd/wrfout_d03_<cyclestr offset="#fcst#:00:00">@Y-@m-@d_@H:@M:@S</cyclestr></datadep>
+	</and>
+      </dependency>
+
+      </task> <!--task name="post"-->
+
+    </metatask> <!--#fcst# for post only-->
+
+    <metatask>
+
+      <var name="fcst">03 06 09 12 15 18 21 24 27 30 33 36 39 42 45 48</var>
+      <var name="prev_fcst">00 03 06 09 12 15 18 21 24 27 30 33 36 39 42 45</var>
+
+      <task name="bucket_03h_#model#_#fcst#" maxtries="1" cycledefs="00Z">
+
+        <command>&SCRIPTS;/bucket.ksh</command>
+      
+        <account>&PROJECT;</account>
+	<queue>&CA;</queue>
+	<cores>1</cores>
+	<walltime>00:05:00</walltime>
+	<jobname><cyclestr>bucket_03h_#model#_@Y@m@d@H_#fcst#</cyclestr></jobname>
+	<join><cyclestr>&LOG;/bucket/bucket_03h_@Y@m@d@H_#fcst#.log</cyclestr></join> 
+
+	<envar>
+          <name>CONSTANT</name>
+          <value>&CONSTANT;</value>
+        </envar>
+        <envar>
+          <name>START_TIME</name>
+          <value><cyclestr>@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>FCST_TIME</name>
+          <value>#fcst#</value>
+        </envar>
+        <envar>
+          <name>ACCUM_TIME</name>
+          <value>03</value>
+        </envar>
+        <envar>
+          <name>DOMAIN_LIST</name>
+          <value>d01 d02 d03</value>
+        </envar>
+        <envar>
+          <name>MET_EXE_ROOT</name>
+          <value>&MET_EXEC;</value>
+        </envar>
+        <envar>
+          <name>WRF_CORE</name>
+          <value>ARW</value>
+        </envar>
+        <envar>
+          <name>MOAD_DATAHOME</name>
+          <value>&MOAD_DATAHOME;/static</value>
+        </envar>
+        <envar>
+          <name>MOAD_DATAROOT</name>
+          <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>MODEL</name>
+          <value>ARW</value>
+        </envar>
+
+        <dependency>
+          <and>
+            <taskdep task="post_#model#_#prev_fcst#" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_#fcst#" state="SUCCEEDED"/>
+          </and>
+        </dependency>
+
+      </task> <!--task name="bucket_03h"-->
+	
+    </metatask>  <!--#fcst# and #prev_fcst# for bucket_03h only-->
+
+    <metatask>
+
+      <var name="fcst">36</var>
+      <var name="prev_fcst">12</var>
+
+      <task name="bucket_24h_#model#_00Z_#fcst#" maxtries="1" cycledefs="00Z">
+
+        <command>&SCRIPTS;/bucket.ksh</command>
+      
+        <account>&PROJECT;</account>
+	<queue>&CA;</queue>
+	<cores>1</cores>
+	<walltime>00:05:00</walltime>
+	<jobname><cyclestr>bucket_24h_#model#_@Y@m@d@H_#fcst#</cyclestr></jobname>
+	<join><cyclestr>&LOG;/bucket/bucket_24h_@Y@m@d@H_#fcst#.log</cyclestr></join> 
+
+        <envar>
+          <name>CONSTANT</name>
+          <value>&CONSTANT;</value>
+        </envar>
+        <envar>
+          <name>START_TIME</name>
+          <value><cyclestr>@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>FCST_TIME</name>
+          <value>#fcst#</value>
+        </envar>
+        <envar>
+          <name>ACCUM_TIME</name>
+          <value>24</value>
+        </envar>
+        <envar>
+          <name>DOMAIN_LIST</name>
+          <value>d01 d02 d03</value>
+        </envar>
+        <envar>
+	  <name>EXE_ROOT</name>
+	  <value>&UPP_EXEC;</value>
+        </envar>
+        <envar>
+          <name>MET_EXE_ROOT</name>
+          <value>&MET_EXEC;</value>
+        </envar>
+        <envar>
+          <name>WRF_CORE</name>
+          <value>ARW</value>
+        </envar>
+        <envar>
+          <name>MOAD_DATAHOME</name>
+          <value>&MOAD_DATAHOME;/static</value>
+        </envar>
+        <envar>
+          <name>MOAD_DATAROOT</name>
+          <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>MODEL</name>
+          <value>ARW</value>
+        </envar>
+
+        <dependency>
+          <and>
+            <taskdep task="post_#model#_#prev_fcst#" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_#fcst#" state="SUCCEEDED"/>
+          </and>
+        </dependency>
+
+      </task> <!--task name="bucket_24h_00Z"-->
+
+    </metatask> <!--#fcst# and #prev_fcst# for bucket_24h_00Z only-->
+
+      <task name="ncl_sfc_#model#" maxtries="1" cycledefs="00Z">
+
+        <command>&SCRIPTS;/ncl_sfc.ksh</command>
+      
+        <account>&PROJECT;</account>
+	<queue>&GE;</queue>
+        <cores>1</cores>
+        <walltime>01:45:00</walltime>
+        <jobname><cyclestr>ncl_sfc_#model#_@Y@m@d@H</cyclestr></jobname>
+        <join><cyclestr>&LOG;/ncl/ncl_sfc_@Y@m@d@H.log</cyclestr></join>  
+
+        <envar>
+          <name>CONSTANT</name>
+          <value>&CONSTANT;</value>
+        </envar>
+        <envar>
+          <name>START_TIME</name>
+          <value><cyclestr>@Y@m@d@H</cyclestr></value>
+        </envar>
+       <envar>
+         <name>FCST_TIME_LIST</name>
+	 <value>03 06 09 12 15 18 21 24 27 30 33 36 39 42 45 48</value>
+       </envar>
+       <envar>
+         <name>DOMAIN_LIST</name>
+         <value>d01 d02 d03</value>
+       </envar>
+       <envar>
+         <name>EXE_ROOT</name>
+         <value>&SCRIPTS;/ncl</value>
+       </envar>
+       <envar>
+         <name>MOAD_DATAROOT</name>
+         <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+       </envar>
+       <envar>
+         <name>MODEL</name>
+         <value>ARW</value>
+       </envar>
+       <envar>
+         <name>TITLE</name>
+         <value>#model#</value>
+       </envar>
+
+       <dependency>
+         <and>
+            <taskdep task="post_#model#_03" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_06" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_09" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_12" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_15" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_18" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_21" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_24" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_27" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_30" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_33" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_36" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_39" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_42" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_45" state="SUCCEEDED"/>
+            <taskdep task="post_#model#_48" state="SUCCEEDED"/>
+         </and>
+       </dependency>
+
+    </task> <!--task name="ncl_sfc_#model#"-->
+    
+    <task name="ncl_ua_#model#" maxtries="1" cycledefs="00Z">
+
+        <command>&SCRIPTS;/ncl_ua.ksh</command>
+      
+        <account>&PROJECT;</account>
+	<queue>&GE;</queue>
+        <cores>1</cores>
+        <walltime>03:00:00</walltime>
+        <jobname><cyclestr>ncl_ua_#model#_@Y@m@d@H</cyclestr></jobname>
+        <join><cyclestr>&LOG;/ncl/ncl_ua_@Y@m@d@H.log</cyclestr></join>  
+
+        <envar>
+          <name>CONSTANT</name>
+          <value>&CONSTANT;</value>
+        </envar>
+        <envar>
+          <name>START_TIME</name>
+          <value><cyclestr>@Y@m@d@H</cyclestr></value>
+        </envar>
+       <envar>
+         <name>FCST_TIME_LIST</name>
+	 <value>00 03 06 09 12 15 18 21 24 27 30 33 36 39 42 45 48</value>
+       </envar>
+       <envar>
+         <name>DOMAIN_LIST</name>
+         <value>d01 d02 d02</value>
+       </envar>
+       <envar>
+         <name>EXE_ROOT</name>
+         <value>&SCRIPTS;/ncl</value>
+       </envar>
+       <envar>
+         <name>MOAD_DATAROOT</name>
+         <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+       </envar>
+       <envar>
+         <name>MODEL</name>
+         <value>ARW</value>
+       </envar>
+       <envar>
+         <name>TITLE</name>
+         <value>#model#</value>
+       </envar>
+
+       <dependency>
+         <and>
+            <taskdep task="ncl_sfc_#model#" state="SUCCEEDED"/>
+         </and>
+       </dependency>
+
+    </task> <!--task name="ncl_ua_#model#"-->
+    
+    <task name="ncl_pcp_#model#"  maxtries="1" cycledefs="00Z">
+              
+        <command>&SCRIPTS;/ncl_pcp_all.ksh</command>   
+              
+        <account>&PROJECT;</account>
+	<queue>&GE;</queue>
+        <cores>1</cores>
+        <walltime>00:30:00</walltime>
+        <jobname><cyclestr>ncl_pcp_#model#</cyclestr></jobname>
+        <join><cyclestr>&LOG;/ncl/ncl_pcp_@Y@m@d@H.log</cyclestr></join> 
+        
+        <envar>
+          <name>CONSTANT</name>
+          <value>&CONSTANT;</value>
+        </envar>
+        <envar>
+          <name>START_TIME</name>
+          <value><cyclestr>@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>FCST_TIME_LIST</name>
+          <value>00 03 06 09 12 15 18 21 24 27 30 33 36 39 42 45 48</value>
+        </envar>
+        <envar>
+          <name>ACCUM_TIME</name>
+          <value>03</value>
+        </envar>
+        <envar>
+          <name>DOMAIN_LIST</name>
+          <value>d01 d02 d03</value>
+        </envar>
+        <envar>
+          <name>EXE_ROOT</name>
+          <value>&SCRIPTS;/ncl</value>
+        </envar>
+        <envar>
+          <name>MOAD_DATAROOT</name>
+          <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>MODEL</name>
+          <value>ARW</value>
+        </envar>
+       <envar>
+         <name>TITLE</name>
+         <value>#model#</value>
+       </envar>
+
+        <dependency>
+          <and>
+            <taskdep task="ncl_ua_#model#" state="SUCCEEDED"/>
+            <taskdep task="bucket_03h_#model#_03" state="SUCCEEDED"/>
+            <taskdep task="bucket_03h_#model#_06" state="SUCCEEDED"/>
+            <taskdep task="bucket_03h_#model#_09" state="SUCCEEDED"/>
+            <taskdep task="bucket_03h_#model#_12" state="SUCCEEDED"/>
+            <taskdep task="bucket_03h_#model#_15" state="SUCCEEDED"/>
+            <taskdep task="bucket_03h_#model#_18" state="SUCCEEDED"/>
+            <taskdep task="bucket_03h_#model#_21" state="SUCCEEDED"/>
+            <taskdep task="bucket_03h_#model#_24" state="SUCCEEDED"/>
+	    <taskdep task="bucket_03h_#model#_27" state="SUCCEEDED"/>
+	    <taskdep task="bucket_03h_#model#_30" state="SUCCEEDED"/>
+	    <taskdep task="bucket_03h_#model#_33" state="SUCCEEDED"/>
+	    <taskdep task="bucket_03h_#model#_36" state="SUCCEEDED"/>
+	    <taskdep task="bucket_03h_#model#_39" state="SUCCEEDED"/>
+	    <taskdep task="bucket_03h_#model#_42" state="SUCCEEDED"/>
+	    <taskdep task="bucket_03h_#model#_45" state="SUCCEEDED"/>
+            <taskdep task="bucket_03h_#model#_48" state="SUCCEEDED"/>
+          </and>
+        </dependency>
+
+    </task>  <!--task name=ncl_pcp_#model#-->
+
+    <metatask>
+
+      <var name="fcst">00 06 12 18 24 30 36 42 48</var>
+
+      <task name="met_point_#model#_#fcst#" maxtries="1" cycledefs="00Z">
+
+      <command>&SCRIPTS;/met_point_verf_all.ksh</command>
+      
+      <account>&PROJECT;</account>
+      <queue>&CA;</queue>
+      <cores>1</cores>
+      <walltime>02:00:00</walltime>
+      <jobname><cyclestr>met_point_#model#_@Y@m@d@H_#fcst#</cyclestr></jobname>
+      <join><cyclestr>&LOG;/met/met_point_@Y@m@d@H_#fcst#.log</cyclestr></join> 
+
+      <envar>
+        <name>CONSTANT</name>
+        <value>&CONSTANT;</value>
+      </envar>
+      <envar>
+        <name>START_TIME</name>
+        <value><cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>FCST_TIME</name>
+        <value>#fcst#</value>
+      </envar>
+      <envar>
+        <name>DOMAIN_LIST</name>
+        <value>d01 d02 d03</value>
+      </envar>
+      <envar>
+        <name>MET_EXE_ROOT</name>
+        <value>&MET_EXEC;</value>
+      </envar>
+      <envar>
+        <name>MET_CONFIG</name>
+        <value>&MET_CONFIG;</value>
+      </envar>
+      <envar>
+        <name>UPP_EXE_ROOT</name>
+        <value>&UPP_EXEC;</value>
+      </envar>
+      <envar>
+        <name>MOAD_DATAROOT</name>
+        <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>RAW_OBS</name>
+        <value>&PNT_OBS_DIR;</value>
+      </envar>
+      <envar>
+        <name>MODEL</name>
+        <value>#model#</value>
+      </envar>
+      <envar>
+	<name>CORE</name>
+	<value>ARW</value>
+      </envar>
+
+      <dependency>
+        <and>
+	  <taskdep task="post_#model#_#fcst#" state="SUCCEEDED"/>
+	<or>  
+	  <datadep age="60">&PNT_OBS_DIR;/<cyclestr offset="#fcst#:00:00">@Y@m@d@H/prepbufr.gdas.@Y@m@d.t@Hz.nr</cyclestr></datadep>
+	</or>
+        </and>
+      </dependency>
+
+    </task> <!--task name="met_point"-->
+
+    </metatask> <!--#fcst# for met_point-->
+
+ <!--   <task name="met_qpf_03h_#model#" maxtries="1" cycledefs="00Z">
+
+      <command>&SCRIPTS;/met_qpf_verf_all.ksh</command>
+      
+      <account>&PROJECT;</account>
+      <queue>&CA;</queue>
+      <cores>1</cores>
+      <walltime>02:00:00</walltime>
+      <jobname><cyclestr>met_qpf_03h_#model#_@Y@m@d@H</cyclestr></jobname>
+      <join><cyclestr>&LOG;/met/met_qpf_03h_@Y@m@d@H.log</cyclestr></join> 
+
+      <envar>
+        <name>CONSTANT</name>
+        <value>&CONSTANT;</value>
+      </envar>
+      <envar>
+        <name>START_TIME</name>
+        <value><cyclestr>@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>FCST_TIME_LIST</name>
+        <value>03 06 09 12 15 18 21 24 27 30 33 36 39 42 45 48</value>
+      </envar>
+      <envar>
+        <name>ACCUM_TIME</name>
+        <value>03</value>
+      </envar>
+      <envar>
+        <name>DOMAIN_LIST</name>
+        <value>d01 d02 d03</value>
+      </envar>
+      <envar>
+        <name>MET_EXE_ROOT</name>
+        <value>&MET_EXEC;</value>
+      </envar>
+      <envar>
+        <name>MET_CONFIG</name>
+        <value>&MET_CONFIG;</value>
+      </envar>
+      <envar>
+        <name>UPP_EXE_ROOT</name>
+        <value>&UPP_EXEC;</value>
+      </envar>
+      <envar>
+        <name>MOAD_DATAROOT</name>
+        <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+      </envar>
+      <envar>
+        <name>RAW_OBS</name>
+        <value>&OBS_DIR;</value>
+      </envar>
+      <envar>
+        <name>MODEL</name>
+        <value>#model#</value>
+      </envar>
+      <envar>
+        <name>CORE</name>
+        <value>ARW</value>
+      </envar>
+
+      <dependency>
+        <and>
+	  <taskdep task="post_#model#_00"/>
+	  <taskdep task="bucket_03h_#model#_03" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_06" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_09" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_12" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_15" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_18" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_21" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_24" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_27" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_30" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_33" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_36" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_39" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_42" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_45" state="SUCCEEDED"/>
+	  <taskdep task="bucket_03h_#model#_48" state="SUCCEEDED"/>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="03:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="06:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="09:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="12:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="15:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="18:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="21:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="24:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="27:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="30:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="33:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="36:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="39:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="42:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="45:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+          <datadep age="60">&ST2_03H_OBS_DIR;/12km/<cyclestr offset="48:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="03:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="06:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="09:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="12:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="15:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="18:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="21:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="24:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="27:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="30:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="33:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="36:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="39:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="42:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="45:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+          <datadep age="60">&ST2_03H_NTV_OBS_DIR;<cyclestr offset="48:00:00">@Y@m@d/ST2ml@Y@m@d@H.03h.nc</cyclestr></datadep>
+         </and>
+      </dependency>
+
+    </task> task name="met_qpf_03h"-->
+
+<!--    <task name="met_qpf_24h_#model#_00Z" maxtries="1" cycledefs="00Z">
+
+        <command>&SCRIPTS;/met_qpf_verf_all.ksh</command>
+      
+        <account>&PROJECT;</account>
+        <queue>&CA;</queue>
+        <cores>1</cores>
+        <walltime>00:20:00</walltime>
+        <jobname><cyclestr>met_qpf_24h_#model#_@Y@m@d@H</cyclestr></jobname>
+        <join><cyclestr>&LOG;/met/met_qpf_24h_@Y@m@d@H.log</cyclestr></join> 
+
+        <envar>
+          <name>CONSTANT</name>
+          <value>&CONSTANT;</value>
+        </envar>
+        <envar>
+          <name>START_TIME</name>
+          <value><cyclestr>@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>FCST_TIME_LIST</name>
+          <value>36</value>
+        </envar>
+        <envar>
+          <name>ACCUM_TIME</name>
+          <value>24</value>
+        </envar>
+        <envar>
+          <name>DOMAIN_LIST</name>
+          <value>d01 d02 d03</value>
+        </envar>
+        <envar>
+          <name>MET_EXE_ROOT</name>
+          <value>&MET_EXEC;</value>
+        </envar>
+        <envar>
+          <name>MET_CONFIG</name>
+          <value>&MET_CONFIG;</value>
+        </envar>
+        <envar>
+          <name>UPP_EXE_ROOT</name>
+          <value>&UPP_EXEC;</value>
+        </envar>
+        <envar>
+          <name>MOAD_DATAROOT</name>
+          <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>RAW_OBS</name>
+          <value>&OBS_DIR;</value>
+        </envar>
+        <envar>
+          <name>MODEL</name>
+          <value>#model#</value>
+        </envar>
+        <envar>
+          <name>CORE</name>
+          <value>ARW</value>
+        </envar>
+
+        <dependency>
+	<and>
+	  <taskdep task="bucket_24h_#model#_00Z_24" state="SUCCEEDED"/>
+	  <taskdep task="bucket_24h_#model#_00Z_48" state="SUCCEEDED"/>
+	  <datadep age="60">&ST2_24H_OBS_DIR;/12km/<cyclestr offset="24:00:00">@Y@m@d/ST2ml@Y@m@d@H.24h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_24H_OBS_DIR;/12km/<cyclestr offset="48:00:00">@Y@m@d/ST2ml@Y@m@d@H.24h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_24H_NTV_OBS_DIR;<cyclestr offset="24:00:00">@Y@m@d/ST2ml@Y@m@d@H.24h.nc</cyclestr></datadep>
+	  <datadep age="60">&ST2_24H_NTV_OBS_DIR;<cyclestr offset="48:00:00">@Y@m@d/ST2ml@Y@m@d@H.24h.nc</cyclestr></datadep>
+	</and>
+        </dependency>
+
+        </task> task name="met_qpf_24h_00Z"-->
+
+<!--    <task name="met_radar_#model#" maxtries="1" cycledefs="00Z">
+
+        <command>&SCRIPTS;/met_radar_verf.ksh</command>
+      
+        <account>&PROJECT;</account>
+        <queue>&CA;</queue>
+        <cores>1</cores>
+        <walltime>03:00:00</walltime>
+        <jobname><cyclestr>met_radar_#model#_@Y@m@d@H</cyclestr></jobname>
+        <join><cyclestr>&LOG;/met/met_radar_@Y@m@d@H.log</cyclestr></join> 
+
+        <envar>
+          <name>CONSTANT</name>
+          <value>&CONSTANT;</value>
+        </envar>
+        <envar>
+          <name>START_TIME</name>
+          <value><cyclestr>@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>FCST_TIME_LIST</name>
+          <value>03 06 09 12 15 18 21 24 27 30 33 36 39 42 45 48</value>
+        </envar>
+        <envar>
+          <name>DOMAIN_LIST</name>
+          <value>d01 d02 d03</value>
+        </envar>
+        <envar>
+          <name>MET_EXE_ROOT</name>
+          <value>&MET_EXEC;</value>
+        </envar>
+        <envar>
+          <name>MET_CONFIG</name>
+          <value>&MET_CONFIG;</value>
+        </envar>
+        <envar>
+          <name>UPP_EXE_ROOT</name>
+          <value>&UPP_EXEC;</value>
+        </envar>
+        <envar>
+          <name>MOAD_DATAROOT</name>
+          <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+        </envar>
+        <envar>
+          <name>RAW_OBS</name>
+          <value>&OBS_DIR;</value>
+        </envar>
+        <envar>
+          <name>MODEL</name>
+          <value>#model#</value>
+        </envar>
+        <envar>
+          <name>CORE</name>
+          <value>ARW</value>
+        </envar>
+
+        <dependency>
+	<and>
+          <taskdep task="post_#model#_03" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_06" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_09" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_12" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_15" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_18" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_21" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_24" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_27" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_30" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_33" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_36" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_39" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_42" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_45" state="SUCCEEDED"/>
+          <taskdep task="post_#model#_48" state="SUCCEEDED"/>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="03:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="06:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="09:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="12:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="15:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="18:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="21:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="24:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="27:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="30:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="33:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="36:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="39:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="42:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="45:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+          <datadep age="60">&OBS_DIR;/RADAR_MOSAIC/12km/<cyclestr offset="48:00:00">@Y@m@d/refd3d.t@Hz.12km.grb</cyclestr></datadep>
+ 	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="03:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="06:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="09:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="12:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="15:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="18:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="21:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="24:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="27:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="30:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="33:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="36:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="39:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="42:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	  <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="45:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+          <datadep age="60">&OBS_DIR;/NATIVE/radar_mosaic/<cyclestr offset="48:00:00">@Y@m@d/grib/refd3d.t@Hz.grbf00</cyclestr></datadep>
+	</and>
+        </dependency>
+
+      </task> task name="met_radar"-->
+
+    <task name="done_#model#" maxtries="1" cycledefs="00Z">
+
+      <command>&SCRIPTS;/done.ksh</command>
+      
+      <account>&PROJECT;</account>
+      <queue>&CA;</queue>
+      <cores>1</cores>
+      <walltime>00:05:00</walltime>
+      <jobname><cyclestr>done_#model#_@Y@m@d@H</cyclestr></jobname>
+      <join><cyclestr>&LOG;/done/done_@Y@m@d@H.log</cyclestr></join> 
+
+      <envar>
+        <name>CONSTANT</name>
+        <value>&CONSTANT;</value>
+      </envar>
+      <envar>
+        <name>MOAD_DATAROOT</name>
+        <value><cyclestr>&MOAD_DATAROOT;/@Y@m@d@H</cyclestr></value>
+      </envar>
+
+      <dependency>
+        <and>
+          <taskdep task="ncl_sfc_#model#" state="SUCCEEDED"/>
+          <taskdep task="ncl_ua_#model#" state="SUCCEEDED"/>
+          <taskdep task="ncl_pcp_#model#" state="SUCCEEDED"/>
+	  <taskdep task="met_point_#model#_06" state="SUCCEEDED"/>
+	  <taskdep task="met_point_#model#_12" state="SUCCEEDED"/>
+	  <taskdep task="met_point_#model#_18" state="SUCCEEDED"/>
+	  <taskdep task="met_point_#model#_24" state="SUCCEEDED"/>
+	  <taskdep task="met_point_#model#_30" state="SUCCEEDED"/>
+	  <taskdep task="met_point_#model#_36" state="SUCCEEDED"/>
+	  <taskdep task="met_point_#model#_42" state="SUCCEEDED"/>
+	  <taskdep task="met_point_#model#_48" state="SUCCEEDED"/>
+<!--          <taskdep task="met_qpf_03h_#model#" state="SUCCEEDED"/>
+          <taskdep task="met_qpf_24h_#model#_00Z" state="SUCCEEDED"/>
+          <taskdep task="met_radar_#model#" state="SUCCEEDED"/>-->
+        </and>
+      </dependency>
+
+    </task> <!--task name="done"-->
+
+  </metatask> <!--#model# for beginning to the end-->
+
+</workflow>
+
+
